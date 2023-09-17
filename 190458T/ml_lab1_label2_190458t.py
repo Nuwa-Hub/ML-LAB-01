@@ -239,6 +239,8 @@ test_features = test_features.drop(columns=highly_correlated)
 
 """Display the resulting feature shapes of the datasets"""
 # Remove features with low variance
+# Set the threshold for variance
+variance_threshold = 0.01
 # Make sure the index of the boolean series matches the index of features_filtered
 train_features = train_features.loc[:,train_features.var() > variance_threshold]
 valid_features = valid_features.loc[:,train_features.var() > variance_threshold]
