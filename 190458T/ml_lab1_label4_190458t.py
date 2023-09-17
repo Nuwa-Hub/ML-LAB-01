@@ -381,7 +381,6 @@ classification_models = [
 ]
 
 # The best model are KNN and SVM
-
 from sklearn.model_selection import StratifiedKFold
 
 # Define the number of folds (K)
