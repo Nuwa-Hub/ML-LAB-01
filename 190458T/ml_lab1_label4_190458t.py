@@ -382,55 +382,71 @@ classification_models = [
 
 # The best model are KNN and SVM
 
-# Number of features used in PCA
-num_features = pca_train_result.shape[1]
-print(f"Number of features: {num_features}\n")
+from sklearn.model_selection import StratifiedKFold
 
-# Train and evaluate each classification model
+# Define the number of folds (K)
+num_folds = 5  # You can adjust this as needed
+
+# Define a list of classification models
+classification_models = [
+    ('K Neighbors', KNeighborsClassifier()),
+    #('SVM', SVC())
+]
+
+# Define your data and labels here
+
+# Create K-fold cross-validation splits
+kf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=42)
+
+# Iterate through each classification model
 for model_name, model in classification_models:
-    # Train the model on the training data
-    model.fit(pca_train_result, train_label4)
+    print(f"Model: {model_name}")
 
-    # Predict on the train data
-    y_pred_train = model.predict(pca_train_result)
+    # Initialize lists to store evaluation metrics across folds
+    accuracy_scores = []
+    precision_scores = []
+    recall_scores = []
 
-    # Calculate metrics for classification evaluation
-    accuracy = accuracy_score(train_label4, y_pred_train)
-    precision = precision_score(train_label4, y_pred_train, average='weighted' , zero_division=1)
-    recall = recall_score(train_label4, y_pred_train, average='weighted')
+    # Iterate through each fold
+    for fold_idx, (train_idx, valid_idx) in enumerate(kf.split(train_data, train_labels)):
+        # Split data into training and validation sets for this fold
+        train_data, train_labels = data[train_idx], labels[train_idx]
+        valid_data, valid_labels = data[valid_idx], labels[valid_idx]
 
-    print(f"Metrics for {model_name} on train data:")
-    print(f"Accuracy: {accuracy:.2f}")
-    print(f"Precision: {precision:.2f}")
-    print(f"Recall: {recall:.2f}")
-    print("\n")
+        # Fit the model on the training data for this fold
+        model.fit(train_data, train_labels)
 
-    # Predict on the validation data
-    y_pred_valid = model.predict(pca_valid_result)
+        # Predict on the validation data for this fold
+        y_pred_valid = model.predict(valid_data)
 
-    # Calculate metrics for classification evaluation on validation data
-    accuracy = accuracy_score(valid_label4, y_pred_valid)
-    precision = precision_score(valid_label4, y_pred_valid, average='weighted', zero_division=1)
-    recall = recall_score(valid_label4, y_pred_valid, average='weighted')
+        # Calculate metrics for classification evaluation on validation data
+        accuracy = accuracy_score(valid_labels, y_pred_valid)
+        precision = precision_score(valid_labels, y_pred_valid, average='weighted', zero_division=1)
+        recall = recall_score(valid_labels, y_pred_valid, average='weighted')
 
-    print(f"Metrics for {model_name} on validation data:")
-    print(f"Accuracy: {accuracy:.2f}")
-    print(f"Precision: {precision:.2f}")
-    print(f"Recall: {recall:.2f}")
-    print("\n")
+        # Append metrics to the respective lists
+        accuracy_scores.append(accuracy)
+        precision_scores.append(precision)
+        recall_scores.append(recall)
 
-    # Predict on the test data
-    y_pred_test = model.predict(pca_test_result)
+        print(f"Fold {fold_idx + 1}:")
+        print(f"Accuracy: {accuracy:.2f}")
+        print(f"Precision: {precision:.2f}")
+        print(f"Recall: {recall:.2f}")
 
-    # Calculate metrics for classification evaluation on test data
-    accuracy = accuracy_score(test_label4, y_pred_test)
-    precision = precision_score(test_label4, y_pred_test, average='weighted', zero_division=1)
-    recall = recall_score(test_label4, y_pred_test, average='weighted')
+    # Calculate and print the mean and standard deviation of metrics across folds
+    mean_accuracy = sum(accuracy_scores) / num_folds
+    mean_precision = sum(precision_scores) / num_folds
+    mean_recall = sum(recall_scores) / num_folds
 
-    print(f"Metrics for {model_name} on test data:")
-    print(f"Accuracy: {accuracy:.2f}")
-    print(f"Precision: {precision:.2f}")
-    print(f"Recall: {recall:.2f}")
+    std_accuracy = (sum((x - mean_accuracy) ** 2 for x in accuracy_scores) / num_folds) ** 0.5
+    std_precision = (sum((x - mean_precision) ** 2 for x in precision_scores) / num_folds) ** 0.5
+    std_recall = (sum((x - mean_recall) ** 2 for x in recall_scores) / num_folds) ** 0.5
+
+    print("Mean across folds:")
+    print(f"Mean Accuracy: {mean_accuracy:.2f} ± {std_accuracy:.2f}")
+    print(f"Mean Precision: {mean_precision:.2f} ± {std_precision:.2f}")
+    print(f"Mean Recall: {mean_recall:.2f} ± {std_recall:.2f}")
     print("\n")
 
 """# Generate Output CSV
